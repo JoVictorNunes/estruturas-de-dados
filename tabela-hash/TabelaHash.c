@@ -125,14 +125,88 @@ int buscaHash_SemColisao(Hash *ha, int mat, struct aluno *al)
   return 1;
 }
 
-// continuar em HASHING UNIVERSAL
+// funções para tratamento de colisões
+
+int sondagemLinear(int pos, int i, int TABLE_SIZE)
+{
+  return ((pos + i) & 0x7FFFFFFF) % TABLE_SIZE;
+}
+
+int sondagemQuadratica(int pos, int i, int TABLE_SIZE)
+{
+  pos = pos + 2 * i + 5 * i * i;
+  return (pos & 0x7FFFFFFF) % TABLE_SIZE;
+}
+
+int duploHash(int H1, int chave, int i, int TABLE_SIZE)
+{
+  int H2 = chaveDivisao(chave, TABLE_SIZE - 1) + 1; // para evitar que seja 0
+  return ((H1 + i * H2) & 0x7FFFFFFF) % TABLE_SIZE;
+}
+
+// busca e inserção com tratamento de colisões
+
+int insereHash_EnderAberto(Hash *ha, struct aluno al)
+{
+  if (ha == NULL || ha->qtd == ha->TABLE_SIZE)
+    return 0;
+  int chave = al.matricula;
+  int i, pos, newPos;
+  pos = chaveDivisao(chave, ha->TABLE_SIZE);
+
+  for (i = 0; i < ha->TABLE_SIZE; i++)
+  {
+    newPos = sondagemLinear(pos, i, ha->TABLE_SIZE);
+
+    if (ha->itens[newPos] == NULL)
+    {
+      struct aluno *novo;
+      novo = (struct aluno *)malloc(sizeof(struct aluno));
+
+      if (novo == NULL)
+        return 0;
+
+      *novo = al;
+      ha->itens[newPos] = novo;
+      ha->qtd++;
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+int buscaHash_EnderAberto(Hash *ha, int mat, struct aluno *al)
+{
+  if (ha == NULL)
+    return 0;
+  int i, pos, newPos;
+  pos = chaveDivisao(mat, ha->TABLE_SIZE);
+
+  for (i = 0; i < ha->TABLE_SIZE; i++)
+  {
+    newPos = sondagemLinear(pos, i, ha->TABLE_SIZE);
+
+    if (ha->itens[newPos] == NULL)
+    {
+      return 0;
+    }
+    if (ha->itens[newPos]->matricula == mat)
+    {
+      *al = *(ha->itens[newPos]);
+      return 1;
+    }
+  }
+
+  return 0;
+}
 
 int main(int argc, char const *argv[])
 {
   Hash *ha;
   struct aluno al;
+
   ha = criaHash(1427);
-  // liberaHash(ha);
   int x = insereHash_SemColisao(ha, al);
   return 0;
 }
